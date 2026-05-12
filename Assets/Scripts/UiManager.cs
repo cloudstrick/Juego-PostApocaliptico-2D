@@ -1,45 +1,54 @@
 using UnityEngine;
 using UnityEngine.UI;
-using UnityEngine.SceneManagement; // Necesario para cambiar de escenas
+using UnityEngine.SceneManagement;
+using UnityEngine.InputSystem;
+using UnityEngine.EventSystems; // <--- AGREGA ESTA LÍNEA
 
 public class UIManager : MonoBehaviour
 {
+    [Header("Referencias de UI")]
     public Slider healthSlider;
     public GameObject pausePanel;
+
     private bool isPaused = false;
 
-    void Update()
+    public void OnPause(InputAction.CallbackContext context)
     {
-        // Detectar si presionas la tecla de pausa (ej: Escape)
-        if (Input.GetKeyDown(KeyCode.Escape))
+        if (context.started)
         {
             if (isPaused) ResumeGame();
             else PauseGame();
         }
     }
 
-    public void UpdateHealth(float currentHealth)
-    {
-        healthSlider.value = currentHealth;
-    }
-
     public void PauseGame()
     {
         pausePanel.SetActive(true);
-        Time.timeScale = 0f; // Congela el tiempo del juego
+        Time.timeScale = 0f;
         isPaused = true;
+
+        Cursor.visible = true;
+        Cursor.lockState = CursorLockMode.None;
     }
 
     public void ResumeGame()
     {
+        // 1. Limpiamos el foco de la UI para que el teclado vuelva al juego
+        EventSystem.current.SetSelectedGameObject(null); // <--- ESTA ES LA MAGIA
+
+        // 2. Cerramos el panel y reanudamos el tiempo
         pausePanel.SetActive(false);
-        Time.timeScale = 1f; // Reanuda el tiempo
+        Time.timeScale = 1f;
         isPaused = false;
+
+        // 3. Volvemos a bloquear el cursor para que no estorbe
+        Cursor.visible = false;
+        Cursor.lockState = CursorLockMode.Locked;
     }
 
     public void ExitToMenu()
     {
-        Time.timeScale = 1f; // Importante reanudar antes de salir
-        SceneManager.LoadScene(0); // Carga la escena del menú (index 0)
+        Time.timeScale = 1f;
+        SceneManager.LoadScene(0);
     }
 }
