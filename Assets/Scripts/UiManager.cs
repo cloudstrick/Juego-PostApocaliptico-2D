@@ -2,16 +2,44 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 using UnityEngine.InputSystem;
-using UnityEngine.EventSystems; // <--- AGREGA ESTA LÍNEA
+using UnityEngine.EventSystems;
+using TMPro; // No olvides esto para el texto de la gema
 
 public class UIManager : MonoBehaviour
 {
-    [Header("Referencias de UI")]
-    public Slider healthSlider;
-    public GameObject pausePanel;
+    // Singleton para que cualquier objeto (como la gema) encuentre al UIManager
+    public static UIManager instance;
 
+    [Header("Referencias de Salud y HUD")]
+    public Slider healthSlider;
+    public TextMeshProUGUI gemText; // Arrastra el "x 0" aquí
+    private int gemCount = 0;
+
+    [Header("Menú de Pausa")]
+    public GameObject pausePanel;
     private bool isPaused = false;
 
+    void Awake()
+    {
+        // Esto permite que el recolectable diga "UIManager.instance.AddGem()"
+        if (instance == null) instance = this;
+    }
+
+    // --- LÓGICA DE COLECCIONABLES ---
+    public void AddGem()
+    {
+        gemCount++;
+        gemText.text = "x " + gemCount.ToString();
+        // Aquí puedes añadir el feedback auditivo que pidió el profe
+    }
+
+    // --- LÓGICA DE SALUD ---
+    public void UpdateHealth(float currentHealth)
+    {
+        healthSlider.value = currentHealth;
+    }
+
+    // --- LÓGICA DE PAUSA (Lo que ya tenías) ---
     public void OnPause(InputAction.CallbackContext context)
     {
         if (context.started)
@@ -26,22 +54,16 @@ public class UIManager : MonoBehaviour
         pausePanel.SetActive(true);
         Time.timeScale = 0f;
         isPaused = true;
-
         Cursor.visible = true;
         Cursor.lockState = CursorLockMode.None;
     }
 
     public void ResumeGame()
     {
-        // 1. Limpiamos el foco de la UI para que el teclado vuelva al juego
-        EventSystem.current.SetSelectedGameObject(null); // <--- ESTA ES LA MAGIA
-
-        // 2. Cerramos el panel y reanudamos el tiempo
+        EventSystem.current.SetSelectedGameObject(null);
         pausePanel.SetActive(false);
         Time.timeScale = 1f;
         isPaused = false;
-
-        // 3. Volvemos a bloquear el cursor para que no estorbe
         Cursor.visible = false;
         Cursor.lockState = CursorLockMode.Locked;
     }
