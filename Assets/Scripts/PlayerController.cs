@@ -13,10 +13,16 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private LayerMask groundLayer;
 
     [Header("Configuración de Combate")]
-    [SerializeField] private Transform attackPoint; // Objeto vacío frente al player
+    [SerializeField] private Transform attackPoint;
     [SerializeField] private float attackRange = 0.6f;
     [SerializeField] private int attackDamage = 1;
-    [SerializeField] private LayerMask enemyLayers; // Selecciona la capa "Enemies"
+    [SerializeField] private LayerMask enemyLayers;
+
+    [Header("Estadísticas de Vida")]
+    [SerializeField] private float maxHealth = 3f;
+    private float currentHealth;
+    [SerializeField] private float hurtCooldown = 1f;
+    private float cooldownTimer;
 
     private Rigidbody2D rb;
     private Animator anim;
@@ -29,24 +35,54 @@ public class PlayerController : MonoBehaviour
         anim = GetComponent<Animator>();
     }
 
+    void Start()
+    {
+        currentHealth = maxHealth;
+        if (UIManager.instance != null)
+        {
+            UIManager.instance.UpdateHealth(currentHealth);
+        }
+    }
+
+    void Update()
+    {
+        if (cooldownTimer > 0) cooldownTimer -= Time.deltaTime;
+    }
+
     void FixedUpdate()
     {
         isGrounded = Physics2D.OverlapCircle(groundCheck.position, groundCheckRadius, groundLayer);
-
-        // Movimiento horizontal
         rb.linearVelocity = new Vector2(moveInput.x * moveSpeed, rb.linearVelocity.y);
 
-        // Actualizar Animator
         anim.SetFloat("Speed", Mathf.Abs(moveInput.x));
         anim.SetBool("Grounded", isGrounded);
 
-        // Giro de Sprite
         if (moveInput.x > 0) transform.localScale = new Vector3(1, 1, 1);
         else if (moveInput.x < 0) transform.localScale = new Vector3(-1, 1, 1);
     }
 
-    // --- ENTRADAS (INPUT SYSTEM) ---
+    public void TakeDamage(float damage)
+    {
+        if (cooldownTimer > 0 || currentHealth <= 0) return;
 
+        currentHealth -= damage;
+        cooldownTimer = hurtCooldown;
+
+        if (UIManager.instance != null)
+        {
+            UIManager.instance.UpdateHealth(currentHealth);
+        }
+
+        if (currentHealth > 0) anim.SetTrigger("Hurt");
+        else Die();
+    }
+
+    void Die()
+    {
+        Debug.Log("El leñador ha sido derrotado.");
+    }
+
+    // --- ENTRADAS (INPUT SYSTEM) ---
     public void OnMove(InputAction.CallbackContext context)
     {
         moveInput = context.ReadValue<Vector2>();
@@ -62,37 +98,28 @@ public class PlayerController : MonoBehaviour
 
     public void OnAttack(InputAction.CallbackContext context)
     {
-        // Solo atacamos cuando se presiona el botón (no al soltarlo)
         if (context.started)
         {
-            PerformAttack();
+            // PASO 1: Solo activamos la animación visual
+            anim.SetTrigger("Attack");
         }
     }
 
-    // --- LÓGICA DE ATAQUE ---
-
-    private void PerformAttack()
+    // PASO 2: Esta función será ejecutada por la propia animación en el frame exacto
+    public void ExecuteDamage()
     {
-        // 1. Activar animación de ataque
-        anim.SetTrigger("Attack");
-
-        // 2. Detectar enemigos en el rango
-        // Usamos OverlapCircleAll para encontrar todo en el área de impacto
         Collider2D[] hitEnemies = Physics2D.OverlapCircleAll(attackPoint.position, attackRange, enemyLayers);
 
-        // 3. Aplicar daño
         foreach (Collider2D enemy in hitEnemies)
         {
             ScorpioAI scorpio = enemy.GetComponent<ScorpioAI>();
             if (scorpio != null)
             {
-                // Pasamos '1' de daño y nuestra posición actual
-                scorpio.TakeDamage(1, transform.position);
+                scorpio.TakeDamage(attackDamage, transform.position);
             }
         }
     }
 
-    // Dibujar el rango de ataque en el editor para facilitar el ajuste
     private void OnDrawGizmosSelected()
     {
         if (attackPoint == null) return;

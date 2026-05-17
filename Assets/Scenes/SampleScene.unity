@@ -1551,11 +1551,13 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 8
   attackPoint: {fileID: 49145418}
-  attackRange: 0.32
+  attackRange: 0.41
   attackDamage: 1
   enemyLayers:
     serializedVersion: 2
     m_Bits: 64
+  maxHealth: 3
+  hurtCooldown: 1
 --- !u!1 &262353513
 GameObject:
   m_ObjectHideFlags: 0
@@ -2970,14 +2972,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a34655e9a6232e047835871420d1d23f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ScorpioAI
-  walkSpeed: 3
-  edgeCheck: {fileID: 796908628}
-  groundLayer:
-    serializedVersion: 2
-    m_Bits: 8
+  walkSpeed: 2
+  detectionRange: 4
   knockbackForce: 5
   knockbackDuration: 0.2
   health: 4
+  damageToPlayer: 1
+  attackCooldown: 2.5
+  detectPlayerRadius: 1.2
+  playerLayer:
+    serializedVersion: 2
+    m_Bits: 128
 --- !u!4 &447922697 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 5640949960462361538, guid: 3085b9b66cd83f14e8ea626a8ae74a4a, type: 3}
@@ -5580,7 +5585,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 796908628}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: EdgeCheck
   m_TagString: Untagged
   m_Icon: {fileID: 2488908585195742037, guid: 0000000000000000d000000000000000, type: 0}
@@ -6095,9 +6100,9 @@ MonoBehaviour:
   m_HandleRect: {fileID: 0}
   m_Direction: 0
   m_MinValue: 0
-  m_MaxValue: 100
+  m_MaxValue: 3
   m_WholeNumbers: 0
-  m_Value: 100
+  m_Value: 3
   m_OnValueChanged:
     m_PersistentCalls:
       m_Calls: []
