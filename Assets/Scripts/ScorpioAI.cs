@@ -4,7 +4,7 @@ public class ScorpioAI : MonoBehaviour
 {
     [Header("Configuración de Caza")]
     [SerializeField] private float walkSpeed = 2.5f;
-    [SerializeField] private float detectionRange = 5f; // Distancia a la que empieza a perseguirte
+    [SerializeField] private float detectionRange = 5f;
 
     [Header("Ajustes de Impacto")]
     [SerializeField] private float knockbackForce = 5f;
@@ -16,8 +16,8 @@ public class ScorpioAI : MonoBehaviour
 
     [Header("Configuración de Ataque")]
     [SerializeField] private float damageToPlayer = 1f;
-    [SerializeField] private float attackCooldown = 2.5f; // Más lento (antes era 1.5)
-    [SerializeField] private float detectPlayerRadius = 0.7f; // Rango de ataque
+    [SerializeField] private float attackCooldown = 2.5f;
+    [SerializeField] private float detectPlayerRadius = 0.7f;
     [SerializeField] private LayerMask playerLayer;
     private float cooldownTimer;
 
@@ -25,6 +25,9 @@ public class ScorpioAI : MonoBehaviour
     private Animator anim;
     private Transform playerTransform;
     private bool isDead = false;
+
+    // VARIABLE NUEVA: Para guardar tu escala de 1.5
+    private Vector3 originalScale;
 
     void Awake()
     {
@@ -34,7 +37,9 @@ public class ScorpioAI : MonoBehaviour
 
     void Start()
     {
-        // Encontrar automáticamente al leñador por su Tag
+        // Guardamos la escala que pusiste en el Inspector (1.5, 1.5, 1)
+        originalScale = transform.localScale;
+
         GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
         if (playerObj != null)
         {
@@ -51,7 +56,6 @@ public class ScorpioAI : MonoBehaviour
     {
         if (isDead || playerTransform == null) return;
 
-        // Si está bajo el efecto del hachazo, retrocede y no hace nada más
         if (knockbackTimer > 0)
         {
             knockbackTimer -= Time.fixedDeltaTime;
@@ -61,30 +65,29 @@ public class ScorpioAI : MonoBehaviour
 
         float distanceToPlayer = Vector2.Distance(transform.position, playerTransform.position);
 
-        // CASO 1: El jugador está en rango de persecución pero fuera del rango de ataque
+        // CASO 1: Persecución activa
         if (distanceToPlayer <= detectionRange && distanceToPlayer > detectPlayerRadius)
         {
             float directionX = playerTransform.position.x - transform.position.x;
 
-            // Moverse hacia el jugador
-            float moveDir = directionX > 0 ? 1 : -1;
-            rb.linearVelocity = new Vector2(moveDir * walkSpeed, rb.linearVelocity.y);
+            rb.linearVelocity = new Vector2(directionX > 0 ? walkSpeed : -walkSpeed, rb.linearVelocity.y);
             anim.SetFloat("speed", Mathf.Abs(rb.linearVelocity.x));
 
-            // Voltear el sprite según la dirección (Modifica los signos si tu sprite mira al revés)
-            if (directionX > 0) transform.localScale = new Vector3(-1, 1, 1);
-            else if (directionX < 0) transform.localScale = new Vector3(1, 1, 1);
+            // CORRECCIÓN DE ESCALA: Ahora multiplicamos por tu tamaño original
+            if (directionX > 0)
+                transform.localScale = new Vector3(-originalScale.x, originalScale.y, originalScale.z);
+            else if (directionX < 0)
+                transform.localScale = new Vector3(originalScale.x, originalScale.y, originalScale.z);
         }
-        // CASO 2: Está lo suficientemente cerca para morder (Rango de ataque)
+        // CASO 2: Rango de ataque
         else if (distanceToPlayer <= detectPlayerRadius)
         {
-            // Se detiene por completo para no empujar al jugador
             rb.linearVelocity = new Vector2(0, rb.linearVelocity.y);
             anim.SetFloat("speed", 0);
 
             CheckAndAttackPlayer();
         }
-        // CASO 3: El jugador está lejos, el escorpión se queda esperando
+        // CASO 3: Fuera de rango
         else
         {
             rb.linearVelocity = new Vector2(0, rb.linearVelocity.y);
@@ -99,9 +102,9 @@ public class ScorpioAI : MonoBehaviour
         PlayerController player = playerTransform.GetComponent<PlayerController>();
         if (player != null)
         {
-            anim.SetTrigger("attack"); // Dispara animación de picotazo
+            anim.SetTrigger("attack");
             player.TakeDamage(damageToPlayer);
-            cooldownTimer = attackCooldown; // Reinicia el contador de lentitud
+            cooldownTimer = attackCooldown;
         }
     }
 
@@ -132,7 +135,6 @@ public class ScorpioAI : MonoBehaviour
 
     private void OnDrawGizmosSelected()
     {
-        // Círculo azul: Rango de detección / Círculo amarillo: Rango de ataque
         Gizmos.color = Color.cyan;
         Gizmos.DrawWireSphere(transform.position, detectionRange);
         Gizmos.color = Color.yellow;
