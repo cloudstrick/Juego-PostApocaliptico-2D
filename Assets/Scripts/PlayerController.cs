@@ -18,14 +18,19 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private int attackDamage = 1;
     [SerializeField] private LayerMask enemyLayers;
 
-    [Header("Estadísticas de Vida")]
-    [SerializeField] private float maxHealth = 3f;
+    [Header("Estadísticas de Vida (HP)")]
+    [SerializeField] private float maxHealth = 100f;
     private float currentHealth;
     [SerializeField] private float hurtCooldown = 1f;
     private float cooldownTimer;
 
-    // NUEVA VARIABLE: Para saber si el jugador pasó a mejor vida
+    [Header("Sistema de Vidas (Oportunidades)")]
+    [SerializeField] private int maxLives = 3;
+    private int currentLives;
     private bool isDead = false;
+
+    // PROPIEDAD PÚBLICA: Permite a otros scripts (como el Escorpión) saber si el jugador murió
+    public bool IsDead => isDead;
 
     private Rigidbody2D rb;
     private Animator anim;
@@ -41,85 +46,105 @@ public class PlayerController : MonoBehaviour
     void Start()
     {
         currentHealth = maxHealth;
-        if (UIManager.instance != null)
-        {
-            UIManager.instance.UpdateHealth(currentHealth);
-        }
+        currentLives = 1;
+
+        UpdateUI();
     }
 
     void Update()
     {
-        if (isDead) return; // Si está muerto, detiene los contadores
+        if (isDead) return;
         if (cooldownTimer > 0) cooldownTimer -= Time.deltaTime;
     }
 
     void FixedUpdate()
     {
-        if (isDead) return; // NUEVO: Si está muerto, no calcula físicas ni se mueve
+        if (isDead) return;
 
         isGrounded = Physics2D.OverlapCircle(groundCheck.position, groundCheckRadius, groundLayer);
-
-        // Movimiento horizontal
         rb.linearVelocity = new Vector2(moveInput.x * moveSpeed, rb.linearVelocity.y);
 
-        // Actualizar Animator
         anim.SetFloat("Speed", Mathf.Abs(moveInput.x));
         anim.SetBool("Grounded", isGrounded);
 
-        // Giro de Sprite
         if (moveInput.x > 0) transform.localScale = new Vector3(1, 1, 1);
         else if (moveInput.x < 0) transform.localScale = new Vector3(-1, 1, 1);
     }
 
     public void TakeDamage(float damage)
     {
-        // Si ya está muerto o es invencible por el cooldown, ignora el daño
-        if (isDead || cooldownTimer > 0 || currentHealth <= 0) return;
+        if (isDead || cooldownTimer > 0) return;
 
         currentHealth -= damage;
         cooldownTimer = hurtCooldown;
 
-        if (UIManager.instance != null)
-        {
-            UIManager.instance.UpdateHealth(currentHealth);
-        }
-
         if (currentHealth > 0)
         {
+            anim.SetTrigger("Hurt");
+            UpdateUI();
+        }
+        else
+        {
+            LoseLife();
+        }
+    }
+
+    private void LoseLife()
+    {
+        currentLives--;
+
+        if (currentLives > 0)
+        {
+            // SOLUCIÓN PUNTO 2: Cada vida equivale a 100 de HP. Se llena automáticamente aquí
+            currentHealth = maxHealth;
+            UpdateUI(); // Actualizamos el HUD con los nuevos 100 HP de forma limpia
             anim.SetTrigger("Hurt");
         }
         else
         {
-            Die(); // ¡Hora de activar la secuencia de derrota!
+            currentHealth = 0; // Aseguramos que el slider quede en 0
+            UpdateUI();
+            ActualDie();
         }
     }
 
-    // --- Función que se ejecuta cuando la vida llega a 0 ---
-    void Die()
+    void ActualDie()
     {
-        // 1. Activar animación de muerte en el Animator
-        anim.SetTrigger("die"); // O como hayas nombrado tu trigger
-
-        // --- SOLUCIÓN PARA QUE EL ESCORPIÓN NO ATAQUE MAS ---
-
-        // 2. Desactivar el tag para que los escaneos de área no lo encuentren
-        transform.tag = "Untagged";
-
-        // 3. Desactivar el BoxCollider2D físico principal
-        GetComponent<BoxCollider2D>().enabled = false;
-
-        // 4. Detener el Rigidbody y hacerlo Static para que no se deslice
-        rb.linearVelocity = Vector2.zero; // Si usas Unity 2022 o anterior, es rb.velocity
+        isDead = true;
+        anim.SetTrigger("Die");
+        rb.linearVelocity = Vector2.zero;
         rb.bodyType = RigidbodyType2D.Static;
-
-        // Opcional: Desactivar cualquier Canvas de vida que flote sobre él
-        // GetComponentInChildren<CanvasVidaPlayer>().gameObject.SetActive(false); 
-
-        Debug.Log("El leñador ha sido derrotado.");
+        GetComponent<Collider2D>().enabled = false;
+        Debug.Log("GAME OVER: Te quedaste sin vidas.");
     }
 
-    // --- ENTRADAS (INPUT SYSTEM) ---
-    // Agregamos candados de 'isDead' a las entradas para que no se pueda controlar el cadáver
+    public bool AddLife()
+    {
+        if (currentLives >= maxLives || isDead) return false;
+
+        currentLives++;
+        UpdateUI();
+        return true;
+    }
+
+    public bool Heal(float amount)
+    {
+        if (currentHealth >= maxHealth || isDead) return false;
+
+        currentHealth += amount;
+        if (currentHealth > maxHealth) currentHealth = maxHealth;
+
+        UpdateUI();
+        return true;
+    }
+
+    private void UpdateUI()
+    {
+        if (UIManager.instance != null)
+        {
+            UIManager.instance.UpdateHUD(currentHealth, currentLives);
+        }
+    }
 
     public void OnMove(InputAction.CallbackContext context)
     {
@@ -139,16 +164,12 @@ public class PlayerController : MonoBehaviour
     public void OnAttack(InputAction.CallbackContext context)
     {
         if (isDead) return;
-        if (context.started)
-        {
-            anim.SetTrigger("Attack");
-        }
+        if (context.started) anim.SetTrigger("Attack");
     }
 
     public void ExecuteDamage()
     {
-        if (isDead) return; // Si murió antes de que cayera el hacha, no hace daño
-
+        if (isDead) return;
         Collider2D[] hitEnemies = Physics2D.OverlapCircleAll(attackPoint.position, attackRange, enemyLayers);
 
         foreach (Collider2D enemy in hitEnemies)
