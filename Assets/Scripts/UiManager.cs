@@ -7,21 +7,19 @@ using TMPro;
 
 public class UIManager : MonoBehaviour
 {
-    // Singleton para acceso global
     public static UIManager instance;
 
     [Header("Referencias de Salud y HUD")]
     [SerializeField] private Slider healthSlider;
-    [SerializeField] private TextMeshProUGUI gemText; // Arrastra el "x 0" de las gemas aquí
-
-    // MODIFICACIÓN: Cambiamos el texto único por un arreglo de 3 elementos para los iconos
-    [Header("Iconos de Vidas (Asigna los 3 en orden: 1, 2 y 3)")]
+    [SerializeField] private TextMeshProUGUI gemText;
     [SerializeField] private GameObject[] lifeIcons;
 
     private int gemCount = 0;
 
-    [Header("Menú de Pausa")]
+    [Header("Menús de Interfaz (Paneles)")]
     [SerializeField] private GameObject pausePanel;
+    [SerializeField] private GameObject gameOverPanel; // NUEVO: Arrastra tu panel de muerte aquí
+
     private bool isPaused = false;
 
     void Awake()
@@ -30,38 +28,47 @@ public class UIManager : MonoBehaviour
         else Destroy(gameObject);
     }
 
-    // --- LÓGICA DE COLECCIONABLES ---
     public void AddGem()
     {
         gemCount++;
         gemText.text = "x " + gemCount.ToString();
     }
 
-    // --- LÓGICA DE ACTUALIZACIÓN COMPLETA DEL HUD ---
     public void UpdateHUD(float currentHealth, int currentLives)
     {
-        // 1. Actualiza el slider de salud (0 a 100)
         if (healthSlider != null)
         {
             healthSlider.value = currentHealth;
         }
 
-        // 2. NUEVO: CONTROL DE ICONOS VISUALES DE VIDA
-        // Recorremos el arreglo de 3 iconos mediante un bucle for
         for (int i = 0; i < lifeIcons.Length; i++)
         {
             if (lifeIcons[i] != null)
             {
-                // Si el índice actual es menor que tus vidas, el icono se enciende (true).
-                // De lo contrario, se apaga (false).
                 lifeIcons[i].SetActive(i < currentLives);
             }
+        }
+    }
+
+    // --- NUEVO: MOSTRAR PANTALLA DE MUERTE ---
+    public void ShowGameOverScreen()
+    {
+        if (gameOverPanel != null)
+        {
+            gameOverPanel.SetActive(true);
+
+            // Desbloqueamos el cursor del mouse para que el jugador pueda hacer clic en el botón
+            Cursor.visible = true;
+            Cursor.lockState = CursorLockMode.None;
         }
     }
 
     // --- LÓGICA DE PAUSA ---
     public void OnPause(InputAction.CallbackContext context)
     {
+        // Evitamos pausar si el panel de Game Over ya está activo
+        if (gameOverPanel != null && gameOverPanel.activeSelf) return;
+
         if (context.started)
         {
             if (isPaused) ResumeGame();
@@ -91,6 +98,6 @@ public class UIManager : MonoBehaviour
     public void ExitToMenu()
     {
         Time.timeScale = 1f;
-        SceneManager.LoadScene(0);
+        SceneManager.LoadScene(0); // Carga la escena con índice 0 (Menú Principal)
     }
 }

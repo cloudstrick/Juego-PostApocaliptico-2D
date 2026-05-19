@@ -29,7 +29,6 @@ public class PlayerController : MonoBehaviour
     private int currentLives;
     private bool isDead = false;
 
-    // PROPIEDAD PÚBLICA: Permite a otros scripts (como el Escorpión) saber si el jugador murió
     public bool IsDead => isDead;
 
     private Rigidbody2D rb;
@@ -47,7 +46,6 @@ public class PlayerController : MonoBehaviour
     {
         currentHealth = maxHealth;
         currentLives = 1;
-
         UpdateUI();
     }
 
@@ -95,14 +93,13 @@ public class PlayerController : MonoBehaviour
 
         if (currentLives > 0)
         {
-            // SOLUCIÓN PUNTO 2: Cada vida equivale a 100 de HP. Se llena automáticamente aquí
             currentHealth = maxHealth;
-            UpdateUI(); // Actualizamos el HUD con los nuevos 100 HP de forma limpia
+            UpdateUI();
             anim.SetTrigger("Hurt");
         }
         else
         {
-            currentHealth = 0; // Aseguramos que el slider quede en 0
+            currentHealth = 0;
             UpdateUI();
             ActualDie();
         }
@@ -115,6 +112,13 @@ public class PlayerController : MonoBehaviour
         rb.linearVelocity = Vector2.zero;
         rb.bodyType = RigidbodyType2D.Static;
         GetComponent<Collider2D>().enabled = false;
+
+        // NUEVO: Llamamos a la pantalla de Game Over de forma segura
+        if (UIManager.instance != null)
+        {
+            UIManager.instance.ShowGameOverScreen();
+        }
+
         Debug.Log("GAME OVER: Te quedaste sin vidas.");
     }
 
