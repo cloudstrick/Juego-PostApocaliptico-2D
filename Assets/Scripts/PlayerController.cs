@@ -36,6 +36,9 @@ public class PlayerController : MonoBehaviour
     private Vector2 moveInput;
     private bool isGrounded;
 
+    // NUEVA VARIABLE: Guarda el punto exacto de aparición en el mapa
+    private Vector3 startPosition;
+
     void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
@@ -46,6 +49,10 @@ public class PlayerController : MonoBehaviour
     {
         currentHealth = maxHealth;
         currentLives = 1;
+
+        // Guardamos automáticamente la posición inicial del leñador al arrancar el nivel
+        startPosition = transform.position;
+
         UpdateUI();
     }
 
@@ -105,6 +112,36 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+    // NUEVA FUNCIÓN: Controla qué pasa cuando tocas la DeadZone
+    public void FallIntoAbyss()
+    {
+        if (isDead) return;
+
+        currentLives--; // Pierde una vida directamente
+
+        if (currentLives > 0)
+        {
+            currentHealth = maxHealth; // Restauramos su HP a 100
+
+            // Teletransportamos al leñador al inicio
+            transform.position = startPosition;
+
+            // ¡SÚPER IMPORTANTE! Reseteamos la velocidad física para que al reaparecer
+            // no conserve la fuerza de caída libre y se caiga del mapa de inmediato
+            rb.linearVelocity = Vector2.zero;
+
+            UpdateUI();
+            anim.SetTrigger("Hurt");
+        }
+        else
+        {
+            // Si ya no tenía vidas extras, muere definitivamente
+            currentHealth = 0;
+            UpdateUI();
+            ActualDie();
+        }
+    }
+
     void ActualDie()
     {
         isDead = true;
@@ -113,7 +150,6 @@ public class PlayerController : MonoBehaviour
         rb.bodyType = RigidbodyType2D.Static;
         GetComponent<Collider2D>().enabled = false;
 
-        // NUEVO: Llamamos a la pantalla de Game Over de forma segura
         if (UIManager.instance != null)
         {
             UIManager.instance.ShowGameOverScreen();
