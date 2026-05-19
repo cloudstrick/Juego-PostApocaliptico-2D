@@ -1,32 +1,35 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.SceneManagement; // NUEVO: Necesario para revisar en qué nivel estamos
 
 public class PlayerController : MonoBehaviour
 {
     [Header("Configuración de Movimiento")]
-    [SerializeField] private float moveSpeed = 7f;
+    [SerializeField] private float moveSpeed = 5f;
     [SerializeField] private float jumpForce = 12f;
 
     [Header("Detección Suelo")]
     [SerializeField] private Transform groundCheck;
-    [SerializeField] private float groundCheckRadius = 0.3f;
+    [SerializeField] private float groundCheckRadius = 0.2f;
     [SerializeField] private LayerMask groundLayer;
 
     [Header("Configuración de Combate")]
     [SerializeField] private Transform attackPoint;
-    [SerializeField] private float attackRange = 0.6f;
+    [SerializeField] private float attackRange = 0.41f;
     [SerializeField] private int attackDamage = 1;
     [SerializeField] private LayerMask enemyLayers;
 
     [Header("Estadísticas de Vida (HP)")]
     [SerializeField] private float maxHealth = 100f;
-    private float currentHealth;
     [SerializeField] private float hurtCooldown = 1f;
     private float cooldownTimer;
 
+    // MODIFICACIÓN CLAVE: Ahora son 'public static' para que viajen entre escenas sin borrarse
+    public static float currentHealth = 100f;
+    public static int currentLives = 1;
+
     [Header("Sistema de Vidas (Oportunidades)")]
     [SerializeField] private int maxLives = 3;
-    private int currentLives;
     private bool isDead = false;
 
     public bool IsDead => isDead;
@@ -35,8 +38,6 @@ public class PlayerController : MonoBehaviour
     private Animator anim;
     private Vector2 moveInput;
     private bool isGrounded;
-
-    // NUEVA VARIABLE: Guarda el punto exacto de aparición en el mapa
     private Vector3 startPosition;
 
     void Awake()
@@ -47,11 +48,15 @@ public class PlayerController : MonoBehaviour
 
     void Start()
     {
-        currentHealth = maxHealth;
-        currentLives = 1;
-
-        // Guardamos automáticamente la posición inicial del leñador al arrancar el nivel
         startPosition = transform.position;
+
+        // SOLUCIÓN: Si la escena actual es el nivel 1 (Índice 1 en Build Settings), vaciamos todo a los valores iniciales
+        if (SceneManager.GetActiveScene().buildIndex == 1)
+        {
+            currentHealth = maxHealth;
+            currentLives = 1;
+        }
+        // Si el índice es 2 (LV02), el script ignorará este bloque 'if' y mantendrá la vida/salud exacta que te quedaba
 
         UpdateUI();
     }
@@ -112,22 +117,16 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    // NUEVA FUNCIÓN: Controla qué pasa cuando tocas la DeadZone
     public void FallIntoAbyss()
     {
         if (isDead) return;
 
-        currentLives--; // Pierde una vida directamente
+        currentLives--;
 
         if (currentLives > 0)
         {
-            currentHealth = maxHealth; // Restauramos su HP a 100
-
-            // Teletransportamos al leñador al inicio
+            currentHealth = maxHealth;
             transform.position = startPosition;
-
-            // ¡SÚPER IMPORTANTE! Reseteamos la velocidad física para que al reaparecer
-            // no conserve la fuerza de caída libre y se caiga del mapa de inmediato
             rb.linearVelocity = Vector2.zero;
 
             UpdateUI();
@@ -135,7 +134,6 @@ public class PlayerController : MonoBehaviour
         }
         else
         {
-            // Si ya no tenía vidas extras, muere definitivamente
             currentHealth = 0;
             UpdateUI();
             ActualDie();

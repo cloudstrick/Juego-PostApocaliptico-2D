@@ -14,11 +14,13 @@ public class UIManager : MonoBehaviour
     [SerializeField] private TextMeshProUGUI gemText;
     [SerializeField] private GameObject[] lifeIcons;
 
-    private int gemCount = 0;
+    public static int gemCount = 0;
 
     [Header("Menús de Interfaz (Paneles)")]
     [SerializeField] private GameObject pausePanel;
-    [SerializeField] private GameObject gameOverPanel; // NUEVO: Arrastra tu panel de muerte aquí
+    [SerializeField] private GameObject gameOverPanel;
+    [SerializeField] private GameObject winPanel;
+    [SerializeField] private TextMeshProUGUI totalGemsText;
 
     private bool isPaused = false;
 
@@ -26,6 +28,24 @@ public class UIManager : MonoBehaviour
     {
         if (instance == null) instance = this;
         else Destroy(gameObject);
+    }
+
+    void Start()
+    {
+        // 1. Si es el primer nivel, las gemas vuelven obligatoriamente a 0
+        if (SceneManager.GetActiveScene().buildIndex == 1)
+        {
+            gemCount = 0;
+        }
+
+        // 2. MODIFICACIÓN CRÍTICA: Forzamos pintar el HUD usando los datos estáticos del jugador
+        // Esto evita que al cambiar al nivel 2 las barras se dibujen vacías o reseteadas
+        UpdateHUD(PlayerController.currentHealth, PlayerController.currentLives);
+
+        if (gemText != null)
+        {
+            gemText.text = "x " + gemCount.ToString();
+        }
     }
 
     public void AddGem()
@@ -50,24 +70,37 @@ public class UIManager : MonoBehaviour
         }
     }
 
-    // --- NUEVO: MOSTRAR PANTALLA DE MUERTE ---
     public void ShowGameOverScreen()
     {
         if (gameOverPanel != null)
         {
             gameOverPanel.SetActive(true);
-
-            // Desbloqueamos el cursor del mouse para que el jugador pueda hacer clic en el botón
             Cursor.visible = true;
             Cursor.lockState = CursorLockMode.None;
         }
     }
 
-    // --- LÓGICA DE PAUSA ---
+    public void ShowWinScreen()
+    {
+        if (winPanel != null)
+        {
+            winPanel.SetActive(true);
+
+            if (totalGemsText != null)
+            {
+                totalGemsText.text = "Objetivos recolectados: " + gemCount.ToString();
+            }
+
+            Cursor.visible = true;
+            Cursor.lockState = CursorLockMode.None;
+            Time.timeScale = 0f;
+        }
+    }
+
     public void OnPause(InputAction.CallbackContext context)
     {
-        // Evitamos pausar si el panel de Game Over ya está activo
         if (gameOverPanel != null && gameOverPanel.activeSelf) return;
+        if (winPanel != null && winPanel.activeSelf) return;
 
         if (context.started)
         {
@@ -98,6 +131,6 @@ public class UIManager : MonoBehaviour
     public void ExitToMenu()
     {
         Time.timeScale = 1f;
-        SceneManager.LoadScene(0); // Carga la escena con índice 0 (Menú Principal)
+        SceneManager.LoadScene(0);
     }
 }
