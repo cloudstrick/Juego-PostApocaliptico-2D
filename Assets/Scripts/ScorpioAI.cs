@@ -3,11 +3,11 @@ using UnityEngine;
 public class ScorpioAI : MonoBehaviour
 {
     [Header("Configuración de Caza")]
-    [SerializeField] private float walkSpeed = 2.5f;
+    [SerializeField] private float walkSpeed = 2f;
     [SerializeField] private float detectionRange = 5f;
 
     [Header("Ajustes de Impacto")]
-    [SerializeField] private float knockbackForce = 5f;
+    [SerializeField] private float knockbackForce = 7f;
     [SerializeField] private float knockbackDuration = 0.2f;
     private float knockbackTimer;
 
@@ -15,8 +15,8 @@ public class ScorpioAI : MonoBehaviour
     [SerializeField] private int health = 4;
 
     [Header("Configuración de Ataque")]
-    [SerializeField] private float damageToPlayer = 10f;
-    [SerializeField] private float attackCooldown = 2.5f;
+    [SerializeField] private float damageToPlayer = 15f;
+    [SerializeField] private float attackCooldown = 3f;
     [SerializeField] private float detectPlayerRadius = 1.6f;
     [SerializeField] private LayerMask playerLayer;
     private float cooldownTimer;
@@ -139,6 +139,6 @@ public class ScorpioAI : MonoBehaviour
             Instantiate(healingItemPrefab, transform.position, Quaternion.identity);
         }
 
-        Destroy(gameObject, 3f);
+        Destroy(gameObject, 1.5f);
     }
 }
