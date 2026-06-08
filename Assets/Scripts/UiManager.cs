@@ -22,6 +22,9 @@ public class UIManager : MonoBehaviour
     [SerializeField] private GameObject winPanel;
     [SerializeField] private TextMeshProUGUI totalGemsText;
 
+    [Header("Transición Iris (Modelo 3)")]
+    [SerializeField] private Animator irisAnimator; // NUEVO: Arrastra el objeto Iris aquí
+
     private bool isPaused = false;
 
     void Awake()
@@ -32,19 +35,25 @@ public class UIManager : MonoBehaviour
 
     void Start()
     {
-        // 1. Si es el primer nivel, las gemas vuelven obligatoriamente a 0
         if (SceneManager.GetActiveScene().buildIndex == 1)
         {
             gemCount = 0;
         }
 
-        // 2. MODIFICACIÓN CRÍTICA: Forzamos pintar el HUD usando los datos estáticos del jugador
-        // Esto evita que al cambiar al nivel 2 las barras se dibujen vacías o reseteadas
         UpdateHUD(PlayerController.currentHealth, PlayerController.currentLives);
 
         if (gemText != null)
         {
             gemText.text = "x " + gemCount.ToString();
+        }
+    }
+
+    // NUEVA FUNCIÓN: Dispara el trigger de cierre en el Animator del Iris
+    public void TriggerIrisClose()
+    {
+        if (irisAnimator != null)
+        {
+            irisAnimator.SetTrigger("StartTransition");
         }
     }
 
