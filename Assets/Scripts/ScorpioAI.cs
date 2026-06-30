@@ -24,11 +24,13 @@ public class ScorpioAI : MonoBehaviour
     [Header("Drops (Botín al Morir)")]
     [SerializeField] private GameObject healingItemPrefab;
 
+    [Header("Configuración de Audio (NUEVO)")]
+    [SerializeField] private AudioSource scorpioAudioSource;
+    [SerializeField] private AudioClip deathSound; // Chillido/Crujido de muerte
+
     private Rigidbody2D rb;
     private Animator anim;
     private Transform playerTransform;
-
-    // NUEVA REFERENCIA: Para monitorear el script del jugador directamente
     private PlayerController playerScript;
 
     private bool isDead = false;
@@ -47,7 +49,7 @@ public class ScorpioAI : MonoBehaviour
         if (playerObj != null)
         {
             playerTransform = playerObj.transform;
-            playerScript = playerObj.GetComponent<PlayerController>(); // Guardamos el script del jugador
+            playerScript = playerObj.GetComponent<PlayerController>();
         }
     }
 
@@ -60,7 +62,7 @@ public class ScorpioAI : MonoBehaviour
     {
         if (isDead || playerTransform == null) return;
 
-        // SOLUCIÓN PUNTO 1: Si el jugador ya murió por completo, el escorpión se calma y no hace nada más
+        // Si el jugador ya murió por completo, el escorpión se calma
         if (playerScript != null && playerScript.IsDead)
         {
             rb.linearVelocity = new Vector2(0, rb.linearVelocity.y);
@@ -103,7 +105,6 @@ public class ScorpioAI : MonoBehaviour
     {
         if (cooldownTimer > 0) return;
 
-        // Doble verificación de seguridad antes de morder
         if (playerScript != null && !playerScript.IsDead)
         {
             anim.SetTrigger("attack");
@@ -118,6 +119,7 @@ public class ScorpioAI : MonoBehaviour
         health -= damage;
         knockbackTimer = knockbackDuration;
 
+        // Efecto de empuje (Knockback)
         Vector2 knockbackDirection = (transform.position - (Vector3)playerPosition).normalized;
         rb.linearVelocity = Vector2.zero;
         rb.AddForce(new Vector2(knockbackDirection.x * knockbackForce, 3f), ForceMode2D.Impulse);
@@ -133,6 +135,12 @@ public class ScorpioAI : MonoBehaviour
         rb.linearVelocity = Vector2.zero;
         rb.bodyType = RigidbodyType2D.Static;
         GetComponent<Collider2D>().enabled = false;
+
+        // NUEVO: Reproducir sonido de muerte del escorpión
+        if (scorpioAudioSource != null && deathSound != null)
+        {
+            scorpioAudioSource.PlayOneShot(deathSound);
+        }
 
         if (healingItemPrefab != null)
         {

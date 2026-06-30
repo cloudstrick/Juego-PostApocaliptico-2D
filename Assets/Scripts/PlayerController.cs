@@ -1,6 +1,6 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
-using UnityEngine.SceneManagement; // NUEVO: Necesario para revisar en qué nivel estamos
+using UnityEngine.SceneManagement;
 
 public class PlayerController : MonoBehaviour
 {
@@ -34,6 +34,11 @@ public class PlayerController : MonoBehaviour
 
     public bool IsDead => isDead;
 
+    [Header("Configuración de Audio (NUEVO)")]
+    [SerializeField] private AudioSource playerAudioSource;
+    [SerializeField] private AudioClip swingAirSound; // Sonido del hachazo al aire
+    [SerializeField] private AudioClip hitEnemySound;  // Sonido del hachazo impactando al enemigo
+
     private Rigidbody2D rb;
     private Animator anim;
     private Vector2 moveInput;
@@ -56,7 +61,6 @@ public class PlayerController : MonoBehaviour
             currentHealth = maxHealth;
             currentLives = 1;
         }
-        // Si el índice es 2 (LV02), el script ignorará este bloque 'if' y mantendrá la vida/salud exacta que te quedaba
 
         UpdateUI();
     }
@@ -202,7 +206,16 @@ public class PlayerController : MonoBehaviour
     public void OnAttack(InputAction.CallbackContext context)
     {
         if (isDead) return;
-        if (context.started) anim.SetTrigger("Attack");
+        if (context.started)
+        {
+            anim.SetTrigger("Attack");
+
+            // NUEVO: Reproducir sonido de hachazo al aire
+            if (playerAudioSource != null && swingAirSound != null)
+            {
+                playerAudioSource.PlayOneShot(swingAirSound);
+            }
+        }
     }
 
     public void ExecuteDamage()
@@ -210,13 +223,22 @@ public class PlayerController : MonoBehaviour
         if (isDead) return;
         Collider2D[] hitEnemies = Physics2D.OverlapCircleAll(attackPoint.position, attackRange, enemyLayers);
 
+        bool golpeoAAlguien = false;
+
         foreach (Collider2D enemy in hitEnemies)
         {
             ScorpioAI scorpio = enemy.GetComponent<ScorpioAI>();
             if (scorpio != null)
             {
                 scorpio.TakeDamage(attackDamage, transform.position);
+                golpeoAAlguien = true; // El golpe fue exitoso contra un enemigo
             }
+        }
+
+        // NUEVO: Si golpeó con éxito, reproducir sonido de impacto
+        if (golpeoAAlguien && playerAudioSource != null && hitEnemySound != null)
+        {
+            playerAudioSource.PlayOneShot(hitEnemySound);
         }
     }
 
