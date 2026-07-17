@@ -1,26 +1,28 @@
 using UnityEngine;
-using System.Collections; // Necesario para los retrasos (Victory Screen)
 
 public class CentipedeAI : MonoBehaviour
 {
     [Header("Centipede Stats (Elite)")]
-    [SerializeField] private int maxHealth = 25; // Mucha más HP para un boss
-    [SerializeField] private int currentHealth;
-    [SerializeField] private float walkSpeed = 2.5f; // Velocidad Élite
-    [SerializeField] private float detectionRange = 10f; // Rango de caza Élite
-    [SerializeField] private float attackRange = 1.9f; // Rango de ataque
+    [SerializeField] private int maxHealth = 10;
+    [SerializeField] private float walkSpeed = 2f;
+    [SerializeField] private float detectionRange = 10f;
+    [SerializeField] private float attackRange = 2.8f;
+
+    // Ocultado del Inspector para evitar confusiones
+    private int currentHealth;
 
     [Header("Ajustes de Impacto")]
-    [SerializeField] private float knockbackForce = 12f; // Mucho empuje al Player
-    [SerializeField] private float knockbackDuration = 0.25f; // Tiempo que el player está aturdido
+    [SerializeField] private float knockbackForce = 12f;
+    [SerializeField] private float knockbackDuration = 0.2f;
     private float knockbackTimer;
 
     [Header("Estadísticas de Daño")]
-    [SerializeField] private float damageToPlayer = 20f; // Daño Élite
-    [SerializeField] private float attackCooldown = 2.5f; // Velocidad de ataque rápida
+    [SerializeField] private float damageToPlayer = 15f;
+    [SerializeField] private float attackCooldown = 10f; // Tiempo de espera largo entre ataques
+    private float cooldownTimer;
 
-    [Header(" drops (Botín Élite al Morir)")]
-    [SerializeField] private GameObject specialHealingPrefab; // Tal vez una curación completa?
+    [Header("drops (Botín Élite al Morir)")]
+    [SerializeField] private GameObject specialHealingPrefab; // Asigna tu prefab "vidas" aquí
 
     [Header("Required Components")]
     [SerializeField] private Animator anim;
@@ -28,11 +30,8 @@ public class CentipedeAI : MonoBehaviour
 
     [Header("Configuración de Audio Élite (NUEVO)")]
     [SerializeField] private AudioSource centipedeAudioSource;
-    [SerializeField] private AudioClip attackSound;
-    [SerializeField] private AudioClip hurtSound;
-    [SerializeField] private AudioClip deathSound; // Chillido/Crujido de Boss final
+    [SerializeField] private AudioClip deathSound; // Solo mantuvimos el sonido de muerte
 
-    // Referencias al Jugador
     private Transform playerTransform;
     private PlayerController playerScript;
 
@@ -47,7 +46,7 @@ public class CentipedeAI : MonoBehaviour
 
     void Start()
     {
-        currentHealth = maxHealth;
+        currentHealth = maxHealth; // Se inicializa internamente al 100%
         originalScale = transform.localScale;
 
         GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
@@ -60,15 +59,15 @@ public class CentipedeAI : MonoBehaviour
 
     void Update()
     {
-        if (isDead) return; // Si el boss está muerto, no hace nada
+        if (isDead) return;
         if (knockbackTimer > 0) knockbackTimer -= Time.deltaTime;
+        if (cooldownTimer > 0) cooldownTimer -= Time.deltaTime;
     }
 
     void FixedUpdate()
     {
         if (isDead || playerTransform == null || playerScript == null) return;
 
-        // Si el jugador ya murió por completo, el Boss se calma (o acecha su cuerpo?)
         if (playerScript.IsDead)
         {
             StopMovement();
@@ -78,7 +77,7 @@ public class CentipedeAI : MonoBehaviour
         if (knockbackTimer > 0)
         {
             knockbackTimer -= Time.fixedDeltaTime;
-            StopMovement(); // Aturdido
+            StopMovement();
             return;
         }
 
@@ -89,14 +88,44 @@ public class CentipedeAI : MonoBehaviour
     {
         float distanceToPlayer = Vector2.Distance(transform.position, playerTransform.position);
 
-        // Lógica de Movimiento y Animación "Walk"
-        if (distanceToPlayer <= detectionRange)
+        // Si está a rango de ataque, se detiene y prepara el ataque
+        if (distanceToPlayer <= attackRange)
+        {
+            StopMovement();
+            CheckAndAttackPlayer();
+        }
+        // Si está a rango de detección pero lejos, lo persigue
+        else if (distanceToPlayer <= detectionRange)
         {
             MoveTowardsPlayer();
         }
         else
         {
-            StopMovement(); // Idle
+            StopMovement();
+        }
+    }
+
+    private void CheckAndAttackPlayer()
+    {
+        if (cooldownTimer > 0) return;
+
+        if (playerScript != null && !playerScript.IsDead)
+        {
+            anim.SetTrigger("Attack"); // Dispara la animación de ataque
+            cooldownTimer = attackCooldown; // Activa el cooldown
+        }
+    }
+
+    // NUEVO: Esta función se llamará automáticamente desde el 4.º frame de la animación
+    public void DealDamageAtFrame()
+    {
+        if (isDead || playerScript == null || playerScript.IsDead) return;
+
+        // Validamos si el jugador sigue estando cerca cuando cae el golpe
+        float distanceToPlayer = Vector2.Distance(transform.position, playerTransform.position);
+        if (distanceToPlayer <= attackRange)
+        {
+            playerScript.TakeDamage(damageToPlayer);
         }
     }
 
@@ -105,14 +134,12 @@ public class CentipedeAI : MonoBehaviour
         float directionX = playerTransform.position.x - transform.position.x;
         rb.linearVelocity = new Vector2(directionX > 0 ? walkSpeed : -walkSpeed, rb.linearVelocity.y);
 
-        // Animación "Speed" para el Animator
         anim.SetFloat("Speed", Mathf.Abs(rb.linearVelocity.x));
 
-        // Voltear Centipede correctamente Élite (Mirando hacia el Player)
         if (directionX > 0)
-            transform.localScale = new Vector3(-originalScale.x, originalScale.y, originalScale.z); // Mirando Derecha (ajustar si tus animaciones están al revés)
+            transform.localScale = new Vector3(-originalScale.x, originalScale.y, originalScale.z);
         else if (directionX < 0)
-            transform.localScale = new Vector3(originalScale.x, originalScale.y, originalScale.z); // Mirando Izquierda
+            transform.localScale = new Vector3(originalScale.x, originalScale.y, originalScale.z);
     }
 
     void StopMovement()
@@ -121,7 +148,6 @@ public class CentipedeAI : MonoBehaviour
         anim.SetFloat("Speed", 0);
     }
 
-    // NUEVO: Función pública para recibir daño Élite (Hurt/Death)
     public void TakeDamage(int damage)
     {
         if (isDead) return;
@@ -130,14 +156,7 @@ public class CentipedeAI : MonoBehaviour
 
         if (currentHealth > 0)
         {
-            // Trigger Animación "Hurt"
             anim.SetTrigger("Hurt");
-
-            // Sonido de Daño Élite
-            if (centipedeAudioSource != null && hurtSound != null)
-            {
-                centipedeAudioSource.PlayOneShot(hurtSound);
-            }
         }
         else
         {
@@ -152,28 +171,21 @@ public class CentipedeAI : MonoBehaviour
         rb.bodyType = RigidbodyType2D.Static;
         GetComponent<Collider2D>().enabled = false;
 
-        // Trigger Animación "Death" / Bloquear con Bool "IsDead"
         anim.SetBool("IsDead", true);
 
-        // Sonido de Muerte del Centipede final
+        // Reproducir el sonido de muerte
         if (centipedeAudioSource != null && deathSound != null)
         {
             centipedeAudioSource.PlayOneShot(deathSound);
         }
 
-        // Lógica de Victoria Élite (Llamar UIManager ShowWinScreen)
-        if (UIManager.instance != null)
+        // Soltar prefab de vida al morir
+        if (specialHealingPrefab != null)
         {
-            StartCoroutine(TriggerVictoryRoutine());
+            Instantiate(specialHealingPrefab, transform.position, Quaternion.identity);
         }
 
-        Debug.Log("ELITE DEFEATED: CENTIPEDE IS DEAD.");
-    }
-
-    // Esperar a que la animación de muerte Élite termine para mostrar la victoria
-    private IEnumerator TriggerVictoryRoutine()
-    {
-        yield return new WaitForSeconds(2.0f); // Dale tiempo a la animación de muerte
-        UIManager.instance.ShowWinScreen();
+        // Desaparece físicamente del juego tras 1.5 segundos exactos
+        Destroy(gameObject, 1.5f);
     }
 }

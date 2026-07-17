@@ -442,6 +442,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4461420853429996423, guid: 7abea93fdc9782d48a3de4dea1d7a402, type: 3}
+      propertyPath: attackRange
+      value: 0.6
+      objectReference: {fileID: 0}
+    - target: {fileID: 4461420853429996423, guid: 7abea93fdc9782d48a3de4dea1d7a402, type: 3}
       propertyPath: hitEnemySound
       value: 
       objectReference: {fileID: 8300000, guid: b7389fea04aaa1546885ef9a912e1ac1, type: 3}
@@ -453,6 +457,10 @@ PrefabInstance:
       propertyPath: playerAudioSource
       value: 
       objectReference: {fileID: 392358581}
+    - target: {fileID: 4461420853429996423, guid: 7abea93fdc9782d48a3de4dea1d7a402, type: 3}
+      propertyPath: enemyLayers.m_Bits
+      value: 320
+      objectReference: {fileID: 0}
     - target: {fileID: 8952875221377909476, guid: 7abea93fdc9782d48a3de4dea1d7a402, type: 3}
       propertyPath: m_AnchorMax.x
       value: 0
@@ -2345,6 +2353,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 424070051}
     m_Modifications:
+    - target: {fileID: 5663335688947055232, guid: 3101916d681e1114992af01b841e085a, type: 3}
+      propertyPath: damageToPlayer
+      value: 10
+      objectReference: {fileID: 0}
     - target: {fileID: 6091908050810180657, guid: 3101916d681e1114992af01b841e085a, type: 3}
       propertyPath: m_Name
       value: EnemyScorpio
@@ -2521,7 +2533,7 @@ Transform:
   m_GameObject: {fileID: 383163346}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 157.75, y: -1.38, z: 0}
+  m_LocalPosition: {x: 158.46, y: -1.12, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -6605,7 +6617,7 @@ Transform:
   m_GameObject: {fileID: 810384320}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 157.61, y: 0.25, z: 0}
+  m_LocalPosition: {x: 157.06, y: 0.25, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -7635,7 +7647,7 @@ GameObject:
   - component: {fileID: 1094933573}
   - component: {fileID: 1094933574}
   - component: {fileID: 1094933575}
-  m_Layer: 6
+  m_Layer: 8
   m_Name: Centipede
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -7823,21 +7835,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a4bcebe0078930744b2ce1f38ac10999, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CentipedeAI
-  maxHealth: 25
-  currentHealth: 0
-  walkSpeed: 2.5
+  maxHealth: 10
+  walkSpeed: 2
   detectionRange: 10
-  attackRange: 1.9
+  attackRange: 2.8
   knockbackForce: 12
-  knockbackDuration: 0.25
-  damageToPlayer: 20
-  attackCooldown: 2.5
+  knockbackDuration: 0.2
+  damageToPlayer: 15
+  attackCooldown: 10
   specialHealingPrefab: {fileID: 7221535949581161033, guid: 8b5c75a2e68ea704ab4f13a631a37d54, type: 3}
   anim: {fileID: 1094933571}
   rb: {fileID: 1094933573}
   centipedeAudioSource: {fileID: 0}
-  attackSound: {fileID: 0}
-  hurtSound: {fileID: 0}
   deathSound: {fileID: 0}
 --- !u!1001 &1097329758
 PrefabInstance:

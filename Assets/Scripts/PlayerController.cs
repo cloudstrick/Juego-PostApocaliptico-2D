@@ -24,7 +24,7 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float hurtCooldown = 1f;
     private float cooldownTimer;
 
-    // MODIFICACIÓN CLAVE: Ahora son 'public static' para que viajen entre escenas sin borrarse
+    // static para mantener datos entre niveles
     public static float currentHealth = 100f;
     public static int currentLives = 1;
 
@@ -34,7 +34,7 @@ public class PlayerController : MonoBehaviour
 
     public bool IsDead => isDead;
 
-    [Header("Configuración de Audio (NUEVO)")]
+    [Header("Configuración de Audio")]
     [SerializeField] private AudioSource playerAudioSource;
     [SerializeField] private AudioClip swingAirSound; // Sonido del hachazo al aire
     [SerializeField] private AudioClip hitEnemySound;  // Sonido del hachazo impactando al enemigo
@@ -55,7 +55,6 @@ public class PlayerController : MonoBehaviour
     {
         startPosition = transform.position;
 
-        // SOLUCIÓN: Si la escena actual es el nivel 1 (Índice 1 en Build Settings), vaciamos todo a los valores iniciales
         if (SceneManager.GetActiveScene().buildIndex == 1)
         {
             currentHealth = maxHealth;
@@ -210,7 +209,6 @@ public class PlayerController : MonoBehaviour
         {
             anim.SetTrigger("Attack");
 
-            // NUEVO: Reproducir sonido de hachazo al aire
             if (playerAudioSource != null && swingAirSound != null)
             {
                 playerAudioSource.PlayOneShot(swingAirSound);
@@ -227,15 +225,23 @@ public class PlayerController : MonoBehaviour
 
         foreach (Collider2D enemy in hitEnemies)
         {
+            // 1. Detectar si es un Escorpión común
             ScorpioAI scorpio = enemy.GetComponent<ScorpioAI>();
             if (scorpio != null)
             {
                 scorpio.TakeDamage(attackDamage, transform.position);
-                golpeoAAlguien = true; // El golpe fue exitoso contra un enemigo
+                golpeoAAlguien = true;
+            }
+
+            // 2. Detectar si es el Boss Centipede (NUEVO)
+            CentipedeAI centipede = enemy.GetComponent<CentipedeAI>();
+            if (centipede != null)
+            {
+                centipede.TakeDamage(attackDamage);
+                golpeoAAlguien = true;
             }
         }
 
-        // NUEVO: Si golpeó con éxito, reproducir sonido de impacto
         if (golpeoAAlguien && playerAudioSource != null && hitEnemySound != null)
         {
             playerAudioSource.PlayOneShot(hitEnemySound);
