@@ -18,6 +18,9 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float attackRange = 0.41f;
     [SerializeField] private int attackDamage = 1;
     [SerializeField] private LayerMask enemyLayers;
+    [SerializeField] private float attackCooldown = 0.5f; // Tiempo de espera entre ataques
+    private float attackCooldownTimer;
+    private bool isAttacking = false; // NUEVO: Interruptor de seguridad de ataque
 
     [Header("Estadísticas de Vida (HP)")]
     [SerializeField] private float maxHealth = 100f;
@@ -55,6 +58,12 @@ public class PlayerController : MonoBehaviour
     {
         startPosition = transform.position;
 
+        // SEGURIDAD: Si por error del Inspector el cooldown quedó en 0, lo forzamos a 0.5s
+        if (attackCooldown <= 0f)
+        {
+            attackCooldown = 0.5f;
+        }
+
         if (SceneManager.GetActiveScene().buildIndex == 1)
         {
             currentHealth = maxHealth;
@@ -67,7 +76,17 @@ public class PlayerController : MonoBehaviour
     void Update()
     {
         if (isDead) return;
+
         if (cooldownTimer > 0) cooldownTimer -= Time.deltaTime;
+
+        if (attackCooldownTimer > 0)
+        {
+            attackCooldownTimer -= Time.deltaTime;
+            if (attackCooldownTimer <= 0)
+            {
+                isAttacking = false; // Apagamos el interruptor al terminar el cooldown por seguridad
+            }
+        }
     }
 
     void FixedUpdate()
@@ -205,9 +224,13 @@ public class PlayerController : MonoBehaviour
     public void OnAttack(InputAction.CallbackContext context)
     {
         if (isDead) return;
-        if (context.started)
+
+        // Solo permite un nuevo ataque si el temporizador terminó y no estamos atacando activamente
+        if (context.started && attackCooldownTimer <= 0 && !isAttacking)
         {
+            isAttacking = true; // Encendemos el interruptor de ataque
             anim.SetTrigger("Attack");
+            attackCooldownTimer = attackCooldown; // Iniciamos el cooldown
 
             if (playerAudioSource != null && swingAirSound != null)
             {
@@ -219,6 +242,12 @@ public class PlayerController : MonoBehaviour
     public void ExecuteDamage()
     {
         if (isDead) return;
+
+        // INTERRUPTOR DE SEGURIDAD: Si el ataque ya se consumió en este swing, ignoramos el daño extra
+        if (!isAttacking) return;
+
+        isAttacking = false; // Consumimos el ataque inmediatamente para este swing
+
         Collider2D[] hitEnemies = Physics2D.OverlapCircleAll(attackPoint.position, attackRange, enemyLayers);
 
         bool golpeoAAlguien = false;
@@ -233,7 +262,7 @@ public class PlayerController : MonoBehaviour
                 golpeoAAlguien = true;
             }
 
-            // 2. Detectar si es el Boss Centipede (NUEVO)
+            // 2. Detectar si es el Boss Centipede
             CentipedeAI centipede = enemy.GetComponent<CentipedeAI>();
             if (centipede != null)
             {
