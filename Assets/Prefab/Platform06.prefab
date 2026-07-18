@@ -465,7 +465,6 @@ GameObject:
   m_Component:
   - component: {fileID: 2748895486325246888}
   - component: {fileID: 956826591856631613}
-  - component: {fileID: 2971373231264969905}
   m_Layer: 3
   m_Name: Platform06
   m_TagString: Untagged
@@ -543,25 +542,6 @@ BoxCollider2D:
   m_AutoTiling: 0
   m_Size: {x: 2.9784775, y: 2.9627085}
   m_EdgeRadius: 0
---- !u!251 &2971373231264969905
-PlatformEffector2D:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4707647380027378782}
-  m_Enabled: 1
-  m_UseColliderMask: 1
-  m_ColliderMask:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_RotationalOffset: 0
-  m_UseOneWay: 1
-  m_UseOneWayGrouping: 0
-  m_SurfaceArc: 180
-  m_UseSideFriction: 0
-  m_UseSideBounce: 0
-  m_SideArc: 1
 --- !u!1 &5519580544807450550
 GameObject:
   m_ObjectHideFlags: 0

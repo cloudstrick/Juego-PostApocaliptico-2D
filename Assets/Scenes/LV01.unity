@@ -1270,6 +1270,22 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 2033967011}
     m_Modifications:
+    - target: {fileID: 0}
+      propertyPath: m_Size.x
+      value: 0.9669943
+      objectReference: {fileID: 0}
+    - target: {fileID: 0}
+      propertyPath: m_Size.y
+      value: 0.34538123
+      objectReference: {fileID: 0}
+    - target: {fileID: 0}
+      propertyPath: m_Offset.x
+      value: -0.0715127
+      objectReference: {fileID: 0}
+    - target: {fileID: 0}
+      propertyPath: m_Offset.y
+      value: 0.057760462
+      objectReference: {fileID: 0}
     - target: {fileID: 956826591856631613, guid: 57f3ff1291e47a545b94d284b59a2982, type: 3}
       propertyPath: m_LayerOverridePriority
       value: 0
