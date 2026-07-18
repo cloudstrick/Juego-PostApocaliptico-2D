@@ -12,8 +12,8 @@ public class CentipedeAI : MonoBehaviour
     private int currentHealth;
 
     [Header("Ajustes de Impacto")]
-    [SerializeField] private float knockbackForce = 12f;
-    [SerializeField] private float knockbackDuration = 0.2f;
+    //[SerializeField] private float knockbackForce = 12f;
+    //[SerializeField] private float knockbackDuration = 0.2f;
     private float knockbackTimer;
 
     [Header("Estadísticas de Daño")]
